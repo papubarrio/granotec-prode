@@ -1,0 +1,27 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Force Montserrat on all form elements */
+input, button, select, textarea {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Falling balls animation */
+@keyframes fall {
+  0%   { transform: translateY(-80px) rotate(0deg);   opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.ball {
+  position: absolute;
+  pointer-events: none;
+  animation: fall linear infinite;
+  user-select: none;
+  will-change: transform;
+}
