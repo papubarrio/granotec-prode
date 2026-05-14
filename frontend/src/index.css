@@ -25,3 +25,21 @@ input, button, select, textarea {
   user-select: none;
   will-change: transform;
 }
+
+/* ── Responsive base ────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Prevent horizontal scroll */
+  body { overflow-x: hidden; }
+
+  /* Tabs scrollable on mobile */
+  .tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  /* Login card full width */
+  .login-card { padding: 32px 20px 28px !important; }
+}

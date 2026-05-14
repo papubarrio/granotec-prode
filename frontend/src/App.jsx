@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { S, B, fmtDateTime } from "./styles";
+import { useIsMobile } from "./hooks";
 import { api, getToken, clearToken } from "./api";
 import Login from "./components/Login";
 import GranotecLogo from "./components/GranotecLogo";
@@ -97,44 +98,58 @@ export default function App() {
     return <Login onLogin={handleLogin} />;
   }
 
+  const isMobile = useIsMobile();
+
   const tabs = [
-    { key: "fixture", label: "🗓 Fixture & Apuestas" },
-    { key: "tabla",   label: "🏅 Tabla de posiciones" },
-    { key: "mis",     label: "📋 Mis apuestas" },
-    ...(user.is_admin ? [{ key: "admin", label: "⚙ Admin" }] : []),
+    { key: "fixture", label: "🗓 Fixture & Apuestas", short: "🗓 Fixture" },
+    { key: "tabla",   label: "🏅 Tabla de posiciones", short: "🏅 Tabla" },
+    { key: "mis",     label: "📋 Mis apuestas",        short: "📋 Mis bets" },
+    ...(user.is_admin ? [{ key: "admin", label: "⚙ Admin", short: "⚙ Admin" }] : []),
   ];
 
   return (
     <div style={S.app}>
       <div style={S.header}>
-        <div style={S.headerInner}>
+        <div style={{ ...S.headerInner, padding: isMobile ? "10px 14px" : "14px 24px" }}>
           <div style={S.logoGroup}>
-            <GranotecLogo height={28} white />
-            <div style={S.dividerV} />
-            <div>
-              <div style={S.proDeTitle}>🏆 Prode Mundial 2026</div>
-              <div style={S.proDeYear}>USA · Canadá · México</div>
-            </div>
+            <GranotecLogo height={isMobile ? 18 : 28} white />
+            {!isMobile && (
+              <>
+                <div style={S.dividerV} />
+                <div>
+                  <div style={S.proDeTitle}>🏆 Prode Mundial 2026</div>
+                  <div style={S.proDeYear}>USA · Canadá · México</div>
+                </div>
+              </>
+            )}
+            {isMobile && (
+              <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 14, marginLeft: 8 }}>
+                🏆 Prode 2026
+              </span>
+            )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {syncing && <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>🔄 Sincronizando...</div>}
-            {lastSync && !syncing && (
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10 }}>
+            {syncing && !isMobile && <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>🔄</div>}
+            {lastSync && !syncing && !isMobile && (
               <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>
                 ✓ {new Date(lastSync.includes("Z") || lastSync.includes("+") ? lastSync : lastSync.replace(" ", "T") + "Z").toLocaleTimeString("es-AR", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" })}
               </div>
             )}
-            <div style={S.playerPill} onClick={handleLogout} title="Cerrar sesión">
-              👤 {user.display_name}
+            <div style={{ ...S.playerPill, fontSize: isMobile ? 13 : 15, padding: isMobile ? "5px 10px" : "6px 14px" }}
+              onClick={handleLogout} title="Cerrar sesión">
+              👤 {isMobile ? user.first_name : user.display_name}
             </div>
           </div>
         </div>
       </div>
 
-      <div style={S.main}>
-        <div style={S.tabBar}>
+      <div style={{ ...S.main, padding: isMobile ? "16px 12px 60px" : "28px 20px 60px" }}>
+        <div className="tab-bar" style={{ ...S.tabBar, gap: isMobile ? 0 : 4 }}>
           {tabs.map(t => (
-            <button key={t.key} style={S.tab(tab === t.key)} onClick={() => setTab(t.key)}>
-              {t.label}
+            <button key={t.key}
+              style={{ ...S.tab(tab === t.key), fontSize: isMobile ? 12 : 14, padding: isMobile ? "10px 12px" : "10px 20px", whiteSpace: "nowrap" }}
+              onClick={() => setTab(t.key)}>
+              {isMobile ? t.short : t.label}
             </button>
           ))}
         </div>

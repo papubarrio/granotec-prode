@@ -1,6 +1,8 @@
 import { S, B, calcPoints } from "../styles";
+import { useIsMobile } from "../hooks";
 
 export default function Leaderboard({ allBets, results, currentUser }) {
+  const isMobile = useIsMobile();
   const scores = {};
   allBets.forEach(bet => {
     const result = results.find(r => r.match_id === bet.match_id);
@@ -35,24 +37,31 @@ export default function Leaderboard({ allBets, results, currentUser }) {
       )}
 
       {board.map((p, i) => (
-        <div key={p.uid} style={S.podiumRow(i + 1)}>
-          <div style={S.rankNum(i + 1)}>
+        <div key={p.uid} style={{ ...S.podiumRow(i + 1), padding: isMobile ? "12px 14px" : "14px 20px" }}>
+          <div style={{ ...S.rankNum(i + 1), marginRight: isMobile ? 10 : 16 }}>
             {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
           </div>
-          <div style={S.playerName}>
+          <div style={{ ...S.playerName, fontSize: isMobile ? 13 : 15 }}>
             {p.display_name}
             {p.uid === currentUser.id && (
-              <span style={{ fontSize: 13, color: B.blue, fontWeight: 700, marginLeft: 8, background: B.bluePale, borderRadius: 10, padding: "1px 8px" }}>vos</span>
+              <span style={{ fontSize: 12, color: B.blue, fontWeight: 700, marginLeft: 6, background: B.bluePale, borderRadius: 10, padding: "1px 7px" }}>vos</span>
+            )}
+            {isMobile && (
+              <div style={{ fontSize: 12, color: B.gray50, marginTop: 2 }}>
+                🎯 {p.exact} · ✓ {p.winner}
+              </div>
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-              <span style={S.ptsTotal}>{p.pts}</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: B.gray50, marginLeft: 4, alignSelf: "flex-end", paddingBottom: 3 }}>pts</span>
+              <span style={{ ...S.ptsTotal, fontSize: isMobile ? 18 : 22 }}>{p.pts}</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: B.gray50, marginLeft: 3, alignSelf: "flex-end", paddingBottom: 2 }}>pts</span>
             </div>
-            <div style={{ fontSize: 13, color: B.gray50, marginTop: 2 }}>
-              🎯 {p.exact} exactos · ✓ {p.winner} ganadores
-            </div>
+            {!isMobile && (
+              <div style={{ fontSize: 13, color: B.gray50, marginTop: 2 }}>
+                🎯 {p.exact} exactos · ✓ {p.winner} ganadores
+              </div>
+            )}
           </div>
         </div>
       ))}
