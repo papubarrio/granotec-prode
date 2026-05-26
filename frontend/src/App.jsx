@@ -8,6 +8,7 @@ import Fixture from "./components/Fixture";
 import Leaderboard from "./components/Leaderboard";
 import MyBets from "./components/MyBets";
 import Admin from "./components/Admin";
+import PrizePodium from "./components/PrizePodium";
 
 export default function App() {
   const isMobile = useIsMobile(); // must be before any conditional return
@@ -155,22 +156,7 @@ export default function App() {
 
         {tab === "fixture" && (
           <>
-            <div style={{ ...S.card, marginBottom: 20 }}>
-              <div style={S.cardHeader}>
-                <span style={S.cardHeaderTitle}>Premios</span>
-              </div>
-              <div style={{ padding: "16px 20px", display: "grid", gap: 10 }}>
-                <div style={{ fontSize: 13, color: B.gray70, lineHeight: 1.5 }}>
-                  <strong>1er puesto:</strong> Camiseta original titular de la Selección Argentina + Caja de Champagne Salentein Brut Nature. <a href="https://www.adidas.com.ar/camiseta-titular-de-la-seleccion-argentina-26/JM5900.html" target="_blank" rel="noreferrer" style={{ color: B.blue }}>Ver</a>
-                </div>
-                <div style={{ fontSize: 13, color: B.gray70, lineHeight: 1.5 }}>
-                  <strong>2do puesto:</strong> Pelota de fútbol Trionda de la Copa del Mundo + Caja de vino Salentein Reserva. <a href="https://www.adidas.com.ar/pelota-trionda-league-copa-mundial-de-la-fifa-26/JD8030.html" target="_blank" rel="noreferrer" style={{ color: B.blue }}>Ver</a>
-                </div>
-                <div style={{ fontSize: 13, color: B.gray70, lineHeight: 1.5 }}>
-                  <strong>3er puesto:</strong> Set de mate + Caja de Vino El Portillo. <a href="https://www.mercadolibre.com.ar/set-matero-termo-mate-y-bombilla-ozz-color-negro/p/MLA65933359?pdp_filters=item_id:MLA2901055438#is_advertising=true&searchVariation=MLA65933359&backend_model=search-backend&be_origin=backend&position=1&search_layout=grid&type=pad&tracking_id=25eddca5-4a8c-4e63-863b-f1c499ccb7bd&ad_domain=VQCATCORE_LST&ad_position=1&ad_click_id=MGM0MTVhZDUtZDZhYi00YjdiLWI3ZjItYTk5NDM4MjA2YWUz" target="_blank" rel="noreferrer" style={{ color: B.blue }}>Ver</a>
-                </div>
-              </div>
-            </div>
+            <PrizePodium />
             <Fixture matches={matches} myBets={myBets} setMyBets={setMyBets} results={results} />
           </>
         )}
