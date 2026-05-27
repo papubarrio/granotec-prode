@@ -84,10 +84,10 @@ export default function Fixture({ matches, myBets, setMyBets, results }) {
                     </div>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }} placeholder="0"
+                      <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }} placeholder="-"
                         value={draftH} onChange={e => setBetDraft(d => ({ ...d, [m.id]: { ...d[m.id], home: e.target.value } }))} />
                       <span style={{ fontWeight: 700, color: B.gray50 }}>–</span>
-                      <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }} placeholder="0"
+                      <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }} placeholder="-"
                         value={draftA} onChange={e => setBetDraft(d => ({ ...d, [m.id]: { ...d[m.id], away: e.target.value } }))} />
                       <button style={{ ...S.betBtn(!!myBet), fontSize: 12, padding: "6px 12px" }}
                         onClick={() => saveBet(m.id)} disabled={saving[m.id]}>
@@ -125,10 +125,10 @@ export default function Fixture({ matches, myBets, setMyBets, results }) {
                   </div>
                 ) : (
                   <div style={S.betInputGroup}>
-                    <input type="number" min="0" max="20" style={S.scoreInput} placeholder="0"
+                    <input type="number" min="0" max="20" style={S.scoreInput} placeholder="-"
                       value={draftH} onChange={e => setBetDraft(d => ({ ...d, [m.id]: { ...d[m.id], home: e.target.value } }))} />
                     <span style={{ fontWeight: 700, color: B.gray50 }}>–</span>
-                    <input type="number" min="0" max="20" style={S.scoreInput} placeholder="0"
+                    <input type="number" min="0" max="20" style={S.scoreInput} placeholder="-"
                       value={draftA} onChange={e => setBetDraft(d => ({ ...d, [m.id]: { ...d[m.id], away: e.target.value } }))} />
                     <button style={S.betBtn(!!myBet)} onClick={() => saveBet(m.id)} disabled={saving[m.id]}>
                       {saving[m.id] ? "..." : myBet ? "✓ Guardado" : "Confirmar"}
