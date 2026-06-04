@@ -161,7 +161,7 @@ export default function App() {
           </>
         )}
         {tab === "tabla" && (
-          <Leaderboard allBets={allBets} results={results} currentUser={user} />
+          <Leaderboard allBets={allBets} results={results} matches={matches} currentUser={user} />
         )}
         {tab === "mis" && (
           <MyBets matches={matches} myBets={myBets} results={results} currentUser={user} />
