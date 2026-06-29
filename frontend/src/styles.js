@@ -55,7 +55,7 @@ export const S = {
 
 // Special subdivision flags (England, Scotland) + standard regional indicator flags
 const FLAG_SPECIAL = {
-  EN: "🏴󠁧󠁢󠁥󠁮󠁦󠁿",
+  EN: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
   SC: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
 };
 

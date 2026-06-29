@@ -1,12 +1,28 @@
 const router = require("express").Router();
 const { query } = require("../db/database");
 const { requireAuth, requireAdmin } = require("../middleware/auth");
-const { MATCHES, KNOCKOUT_BY_UTC, TLA_TO_ISO2, TLA_TO_NAME } = require("./matches");
+const { MATCHES, TLA_TO_ISO2, TLA_TO_NAME } = require("./matches");
 
 const TLA_INDEX = {};
 MATCHES.forEach(m => {
   if (m.homeTla !== "??") TLA_INDEX[`${m.homeTla}|${m.awayTla}`] = m.id;
 });
+
+const STAGE_RANGES = {
+  LAST_32:        [73, 88],
+  LAST_16:        [89, 96],
+  QUARTER_FINALS: [97, 100],
+  SEMI_FINALS:    [101, 102],
+  THIRD_PLACE:    [103, 103],
+  FINAL:          [104, 104],
+};
+
+function localIdsByStage(startId, endId) {
+  return MATCHES
+    .filter(m => m.id >= startId && m.id <= endId)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map(m => m.id);
+}
 
 async function syncFromApi() {
   const apiKey = process.env.FOOTBALL_API_KEY;
@@ -29,15 +45,58 @@ async function syncFromApi() {
     const now = new Date().toISOString();
     let savedResults = 0, savedTeams = 0;
 
+    // Group stage: match by TLA pair
     for (const m of matches) {
+      if (m.status !== "FINISHED") continue;
       const hTla = m.homeTeam?.tla;
       const aTla = m.awayTeam?.tla;
+      if (!hTla || !aTla) continue;
+      const localId = TLA_INDEX[`${hTla}|${aTla}`];
+      if (!localId) continue;
+      const h = m.score?.fullTime?.home;
+      const a = m.score?.fullTime?.away;
+      if (h != null && a != null) {
+        await query(`
+          INSERT INTO results (match_id, home_score, away_score, updated_at)
+          VALUES ($1,$2,$3,$4)
+          ON CONFLICT (match_id) DO UPDATE SET
+            home_score = EXCLUDED.home_score,
+            away_score = EXCLUDED.away_score,
+            updated_at = EXCLUDED.updated_at
+        `, [localId, h, a, now]);
+        savedResults++;
+      }
+    }
 
-      if (m.status === "FINISHED" && hTla && aTla) {
-        const localId = TLA_INDEX[`${hTla}|${aTla}`];
-        if (localId) {
-          const h = m.score?.fullTime?.home;
-          const a = m.score?.fullTime?.away;
+    // Knockout stages: match by chronological position within each stage
+    for (const [stage, [startId, endId]] of Object.entries(STAGE_RANGES)) {
+      const apiMatches = matches
+        .filter(m => m.stage === stage && m.homeTeam?.tla && m.homeTeam.tla !== "??")
+        .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+      const localIds = localIdsByStage(startId, endId);
+
+      for (let i = 0; i < Math.min(apiMatches.length, localIds.length); i++) {
+        const am = apiMatches[i];
+        const localId = localIds[i];
+        const hTla = am.homeTeam.tla;
+        const aTla = am.awayTeam.tla;
+
+        await query(`
+          INSERT INTO match_teams (match_id, home, home_code, away, away_code, date)
+          VALUES ($1,$2,$3,$4,$5,$6)
+          ON CONFLICT (match_id) DO UPDATE SET
+            home = EXCLUDED.home, home_code = EXCLUDED.home_code,
+            away = EXCLUDED.away, away_code = EXCLUDED.away_code,
+            date = EXCLUDED.date
+        `, [localId,
+            TLA_TO_NAME[hTla] || am.homeTeam.name, TLA_TO_ISO2[hTla] || "??",
+            TLA_TO_NAME[aTla] || am.awayTeam.name, TLA_TO_ISO2[aTla] || "??",
+            am.utcDate]);
+        savedTeams++;
+
+        if (am.status === "FINISHED") {
+          const h = am.score?.fullTime?.home;
+          const a = am.score?.fullTime?.away;
           if (h != null && a != null) {
             await query(`
               INSERT INTO results (match_id, home_score, away_score, updated_at)
@@ -49,23 +108,6 @@ async function syncFromApi() {
             `, [localId, h, a, now]);
             savedResults++;
           }
-        }
-      }
-
-      if (hTla && aTla && hTla !== "??") {
-        const utcKey  = new Date(m.utcDate).toISOString().slice(0, 16);
-        const localId = KNOCKOUT_BY_UTC[utcKey];
-        if (localId) {
-          await query(`
-            INSERT INTO match_teams (match_id, home, home_code, away, away_code)
-            VALUES ($1,$2,$3,$4,$5)
-            ON CONFLICT (match_id) DO UPDATE SET
-              home = EXCLUDED.home, home_code = EXCLUDED.home_code,
-              away = EXCLUDED.away, away_code = EXCLUDED.away_code
-          `, [localId,
-              TLA_TO_NAME[hTla] || m.homeTeam.name, TLA_TO_ISO2[hTla] || "??",
-              TLA_TO_NAME[aTla] || m.awayTeam.name, TLA_TO_ISO2[aTla] || "??"]);
-          savedTeams++;
         }
       }
     }

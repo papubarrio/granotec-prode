@@ -147,13 +147,6 @@ const MATCHES = [
 
 const { query } = require("../db/database");
 
-// Index knockout matches by UTC minute for team-name sync
-const KNOCKOUT_BY_UTC = {};
-MATCHES.filter(m => m.id >= 73).forEach(m => {
-  const key = new Date(m.date).toISOString().slice(0, 16); // "2026-07-04T19:00"
-  KNOCKOUT_BY_UTC[key] = m.id;
-});
-
 // TLA → ISO-2 flag code for all 48 WC teams
 const TLA_TO_ISO2 = {
   MEX:"MX", RSA:"ZA", KOR:"KR", CZE:"CZ", CAN:"CA", BIH:"BA", QAT:"QA", SUI:"CH",
@@ -180,13 +173,17 @@ router.get("/", requireAuth, async (req, res, next) => {
     res.json(MATCHES.map(m => {
       const ov = overrideMap[m.id];
       if (!ov) return m;
-      return { ...m, home: ov.home, homeCode: ov.home_code, away: ov.away, awayCode: ov.away_code };
+      return {
+        ...m,
+        home: ov.home, homeCode: ov.home_code,
+        away: ov.away, awayCode: ov.away_code,
+        ...(ov.date ? { date: ov.date } : {}),
+      };
     }));
   } catch (e) { next(e); }
 });
 
 module.exports = router;
-module.exports.MATCHES        = MATCHES;
-module.exports.KNOCKOUT_BY_UTC = KNOCKOUT_BY_UTC;
-module.exports.TLA_TO_ISO2    = TLA_TO_ISO2;
-module.exports.TLA_TO_NAME    = TLA_TO_NAME;
+module.exports.MATCHES     = MATCHES;
+module.exports.TLA_TO_ISO2 = TLA_TO_ISO2;
+module.exports.TLA_TO_NAME = TLA_TO_NAME;
