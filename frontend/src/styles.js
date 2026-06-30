@@ -86,3 +86,12 @@ export const calcPoints = (betH, betA, resH, resA) => {
   if (Math.sign(betH - betA) === Math.sign(resH - resA)) return 1;
   return 0;
 };
+
+// Bonus extra (+1) por acertar quién gana por penales, solo si el usuario predijo
+// el empate exacto y el partido realmente se definió por penales.
+export const calcPenaltyBonus = (betH, betA, betPenalty, resH, resA, resPenalty) => {
+  if (resH == null || resA == null || betH == null || betA == null) return 0;
+  if (resH !== resA || betH !== betA) return 0;
+  if (!betPenalty || !resPenalty) return 0;
+  return betPenalty === resPenalty ? 1 : 0;
+};

@@ -24,6 +24,15 @@ function localIdsByStage(startId, endId) {
     .map(m => m.id);
 }
 
+function extractPenaltyWinner(apiMatch) {
+  if (apiMatch.score?.duration !== "PENALTY_SHOOTOUT") return null;
+  const p = apiMatch.score?.penalties;
+  if (!p || p.home == null || p.away == null) return null;
+  if (p.home > p.away) return "home";
+  if (p.away > p.home) return "away";
+  return null;
+}
+
 async function syncFromApi() {
   const apiKey = process.env.FOOTBALL_API_KEY;
   if (!apiKey) return { ok: false, error: "API key no configurada" };
@@ -57,13 +66,14 @@ async function syncFromApi() {
       const a = m.score?.fullTime?.away;
       if (h != null && a != null) {
         await query(`
-          INSERT INTO results (match_id, home_score, away_score, updated_at)
-          VALUES ($1,$2,$3,$4)
+          INSERT INTO results (match_id, home_score, away_score, penalty_winner, updated_at)
+          VALUES ($1,$2,$3,$4,$5)
           ON CONFLICT (match_id) DO UPDATE SET
             home_score = EXCLUDED.home_score,
             away_score = EXCLUDED.away_score,
+            penalty_winner = EXCLUDED.penalty_winner,
             updated_at = EXCLUDED.updated_at
-        `, [localId, h, a, now]);
+        `, [localId, h, a, extractPenaltyWinner(m), now]);
         savedResults++;
       }
     }
@@ -99,13 +109,14 @@ async function syncFromApi() {
           const a = am.score?.fullTime?.away;
           if (h != null && a != null) {
             await query(`
-              INSERT INTO results (match_id, home_score, away_score, updated_at)
-              VALUES ($1,$2,$3,$4)
+              INSERT INTO results (match_id, home_score, away_score, penalty_winner, updated_at)
+              VALUES ($1,$2,$3,$4,$5)
               ON CONFLICT (match_id) DO UPDATE SET
                 home_score = EXCLUDED.home_score,
                 away_score = EXCLUDED.away_score,
+                penalty_winner = EXCLUDED.penalty_winner,
                 updated_at = EXCLUDED.updated_at
-            `, [localId, h, a, now]);
+            `, [localId, h, a, extractPenaltyWinner(am), now]);
             savedResults++;
           }
         }
@@ -124,7 +135,7 @@ async function syncFromApi() {
 
 router.get("/", requireAuth, async (req, res, next) => {
   try {
-    const { rows }    = await query("SELECT match_id, home_score, away_score FROM results");
+    const { rows }    = await query("SELECT match_id, home_score, away_score, penalty_winner FROM results");
     const { rows: s } = await query("SELECT value FROM settings WHERE key = 'last_sync'");
     res.json({ results: rows, last_sync: s[0]?.value || null });
   } catch (e) { next(e); }
@@ -137,17 +148,20 @@ router.post("/sync", requireAdmin, async (req, res) => {
 router.post("/:matchId", requireAdmin, async (req, res, next) => {
   try {
     const matchId = parseInt(req.params.matchId);
-    const { home_score, away_score } = req.body;
+    const { home_score, away_score, penalty_winner } = req.body;
     if (home_score == null || away_score == null || isNaN(matchId))
       return res.status(400).json({ error: "Datos incompletos" });
+    if (penalty_winner != null && !["home", "away"].includes(penalty_winner))
+      return res.status(400).json({ error: "penalty_winner inválido" });
     await query(`
-      INSERT INTO results (match_id, home_score, away_score, updated_at)
-      VALUES ($1,$2,$3,$4)
+      INSERT INTO results (match_id, home_score, away_score, penalty_winner, updated_at)
+      VALUES ($1,$2,$3,$4,$5)
       ON CONFLICT (match_id) DO UPDATE SET
         home_score = EXCLUDED.home_score,
         away_score = EXCLUDED.away_score,
+        penalty_winner = EXCLUDED.penalty_winner,
         updated_at = EXCLUDED.updated_at
-    `, [matchId, parseInt(home_score), parseInt(away_score), new Date().toISOString()]);
+    `, [matchId, parseInt(home_score), parseInt(away_score), penalty_winner || null, new Date().toISOString()]);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

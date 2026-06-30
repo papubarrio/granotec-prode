@@ -64,6 +64,8 @@ async function initDB() {
   // Ensure hidden flag exists for users
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS hidden_from_leaderboard INTEGER NOT NULL DEFAULT 0`);
   await query(`ALTER TABLE match_teams ADD COLUMN IF NOT EXISTS date TEXT`);
+  await query(`ALTER TABLE bets ADD COLUMN IF NOT EXISTS penalty_winner TEXT`);
+  await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS penalty_winner TEXT`);
 
   // Seed admin if no users exist
   const { rows } = await query("SELECT COUNT(*) AS c FROM users");

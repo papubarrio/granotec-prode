@@ -30,11 +30,11 @@ export const api = {
 
   getMyBets:       () => req("GET", "/bets"),
   getAllBets:       () => req("GET", "/bets/all"),
-  saveBet:         (matchId, home_score, away_score) => req("POST", `/bets/${matchId}`, { home_score, away_score }),
+  saveBet:         (matchId, home_score, away_score, penalty_winner) => req("POST", `/bets/${matchId}`, { home_score, away_score, penalty_winner }),
 
   getResults:      () => req("GET", "/results"),
   syncResults:     () => req("POST", "/results/sync"),
-  saveResult:      (matchId, home_score, away_score) => req("POST", `/results/${matchId}`, { home_score, away_score }),
+  saveResult:      (matchId, home_score, away_score, penalty_winner) => req("POST", `/results/${matchId}`, { home_score, away_score, penalty_winner }),
 
   getUsers:        () => req("GET", "/admin/users"),
   createUser:      (data) => req("POST", "/admin/users", data),

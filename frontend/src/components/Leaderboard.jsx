@@ -1,4 +1,4 @@
-import { S, B, calcPoints } from "../styles";
+import { S, B, calcPoints, calcPenaltyBonus } from "../styles";
 import { useIsMobile } from "../hooks";
 import PrizePodium from "./PrizePodium";
 
@@ -30,16 +30,18 @@ export default function Leaderboard({ allBets, results, matches, currentUser }) 
   const scores = {};
   allBets.forEach(bet => {
     if (!scores[bet.user_id]) {
-      scores[bet.user_id] = { display_name: bet.display_name, pts: 0, exact: 0, winner: 0, bonus: 0, bets: [] };
+      scores[bet.user_id] = { display_name: bet.display_name, pts: 0, exact: 0, winner: 0, bonus: 0, penalty: 0, bets: [] };
     }
     scores[bet.user_id].bets.push(bet);
 
     const result = results.find(r => r.match_id === bet.match_id);
     const pts = calcPoints(bet.home_score, bet.away_score, result?.home_score, result?.away_score);
+    const penPts = calcPenaltyBonus(bet.home_score, bet.away_score, bet.penalty_winner, result?.home_score, result?.away_score, result?.penalty_winner);
     if (pts !== null) {
-      scores[bet.user_id].pts += pts;
+      scores[bet.user_id].pts += pts + penPts;
       if (pts === 3) scores[bet.user_id].exact++;
       if (pts === 1) scores[bet.user_id].winner++;
+      if (penPts > 0) scores[bet.user_id].penalty += penPts;
     }
   });
 
@@ -81,7 +83,7 @@ export default function Leaderboard({ allBets, results, matches, currentUser }) 
             )}
             {isMobile && (
               <div style={{ fontSize: 12, color: B.gray50, marginTop: 2 }}>
-                🎯 {p.exact} · ✓ {p.winner}{p.bonus > 0 && ` · 🎁 +${p.bonus}`}
+                🎯 {p.exact} · ✓ {p.winner}{p.bonus > 0 && ` · 🎁 +${p.bonus}`}{p.penalty > 0 && ` · 🥅 +${p.penalty}`}
               </div>
             )}
           </div>
@@ -96,6 +98,9 @@ export default function Leaderboard({ allBets, results, matches, currentUser }) 
                 {p.bonus > 0 && (
                   <span style={{ color: B.green, fontWeight: 700 }}> · 🎁 +{p.bonus} bonus</span>
                 )}
+                {p.penalty > 0 && (
+                  <span style={{ color: B.blue, fontWeight: 700 }}> · 🥅 +{p.penalty} penales</span>
+                )}
               </div>
             )}
           </div>
@@ -108,6 +113,7 @@ export default function Leaderboard({ allBets, results, matches, currentUser }) 
           <div style={{ fontSize: 14, color: B.blue, fontWeight: 600 }}>✓ Ganador/empate correcto = <strong>1 pt</strong></div>
           <div style={{ fontSize: 14, color: B.blue, fontWeight: 600 }}>✗ Incorrecto = <strong>0 pts</strong></div>
           <div style={{ fontSize: 14, color: B.green, fontWeight: 600 }}>🎁 2+ exactos en un grupo = bonus igual al nro. de exactos en ese grupo</div>
+          <div style={{ fontSize: 14, color: B.blue, fontWeight: 600 }}>🥅 Empate exacto en eliminatorias + acertar penales = <strong>+1 pt</strong></div>
         </div>
       )}
     </div>

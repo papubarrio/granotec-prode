@@ -5,28 +5,48 @@ import { api } from "../api";
 function ManualResult({ match, current, onSave }) {
   const [h, setH] = useState(current?.home_score ?? "");
   const [a, setA] = useState(current?.away_score ?? "");
+  const [penalty, setPenalty] = useState(current?.penalty_winner ?? "");
   const [saving, setSaving] = useState(false);
+
+  const isKnockout = match.id >= 73;
+  const isTie = h !== "" && a !== "" && parseInt(h) === parseInt(a);
+  const needsPenalty = isTie && isKnockout;
 
   const save = async () => {
     if (h === "" || a === "") return;
+    if (needsPenalty && !penalty) { alert("Seleccioná quién gana por penales"); return; }
     setSaving(true);
     try {
-      await onSave(parseInt(h), parseInt(a));
+      await onSave(parseInt(h), parseInt(a), needsPenalty ? penalty : null);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }}
-        value={h} onChange={e => setH(e.target.value)} />
-      <span style={{ fontWeight: 700, color: B.gray50 }}>–</span>
-      <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }}
-        value={a} onChange={e => setA(e.target.value)} />
-      <button style={S.betBtn(!!current)} onClick={save} disabled={saving}>
-        {saving ? "..." : current ? "Actualizar" : "Guardar"}
-      </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }}
+          value={h} onChange={e => setH(e.target.value)} />
+        <span style={{ fontWeight: 700, color: B.gray50 }}>–</span>
+        <input type="number" min="0" max="20" style={{ ...S.scoreInput, width: 40 }}
+          value={a} onChange={e => setA(e.target.value)} />
+        <button style={S.betBtn(!!current)} onClick={save} disabled={saving}>
+          {saving ? "..." : current ? "Actualizar" : "Guardar"}
+        </button>
+      </div>
+      {needsPenalty && (
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="button" style={{ ...S.betBtn(penalty === "home"), fontSize: 12, padding: "4px 10px" }}
+            onClick={() => setPenalty("home")}>
+            {FLAG(match.homeCode)} {match.home}
+          </button>
+          <button type="button" style={{ ...S.betBtn(penalty === "away"), fontSize: 12, padding: "4px 10px" }}
+            onClick={() => setPenalty("away")}>
+            {match.away} {FLAG(match.awayCode)}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -161,11 +181,11 @@ function UserManager() {
 export default function Admin({ matches, results, setResults, lastSync, onSync, syncing }) {
   const lockedMatches = matches.filter(m => new Date(m.date) < new Date());
 
-  const saveResult = async (matchId, h, a) => {
-    await api.saveResult(matchId, h, a);
+  const saveResult = async (matchId, h, a, penalty_winner) => {
+    await api.saveResult(matchId, h, a, penalty_winner);
     setResults(prev => {
       const without = prev.filter(r => r.match_id !== matchId);
-      return [...without, { match_id: matchId, home_score: h, away_score: a }];
+      return [...without, { match_id: matchId, home_score: h, away_score: a, penalty_winner }];
     });
   };
 
@@ -212,7 +232,7 @@ export default function Admin({ matches, results, setResults, lastSync, onSync, 
                   {FLAG(m.homeCode)} {m.home} vs {m.away} {FLAG(m.awayCode)}
                 </span>
               </div>
-              <ManualResult match={m} current={current} onSave={(h, a) => saveResult(m.id, h, a)} />
+              <ManualResult match={m} current={current} onSave={(h, a, p) => saveResult(m.id, h, a, p)} />
             </div>
           );
         })}
